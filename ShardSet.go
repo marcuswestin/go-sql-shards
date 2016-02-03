@@ -77,6 +77,17 @@ func (s *ShardSet) SetupShards(schema string) {
 	return
 }
 
+func (s *ShardSet) CreateUser(user string, privileges string, password string) {
+	for _, shard := range s.shards {
+		cmd := "GRANT " + privileges + " ON *.* TO '" + user + "'@'%' IDENTIFIED BY '" + password + "'"
+		log.Println(cmd)
+		shard.MustExec(cmd)
+		cmd = "GRANT " + privileges + " ON *.* TO '" + user + "'@'localhost' IDENTIFIED BY '" + password + "'"
+		log.Println(cmd)
+		shard.MustExec(cmd)
+	}
+}
+
 func (s *ShardSet) Shard(id int64) *sqlx.DB {
 	if id == 0 {
 		panic("Bad shard index id 0")
