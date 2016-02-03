@@ -1,0 +1,11 @@
+package: github.com/marcuswestin/go-sql-shards
+import:
+- package: fmt
+- package: github.com/marcuswestin/go-cli
+- package: github.com/marcuswestin/go-errs
+- package: github.com/marcuswestin/go-random
+- package: github.com/marcuswestin/sqlx
+- package: log
+- package: os
+- package: strconv
+- package: strings
