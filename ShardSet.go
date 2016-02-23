@@ -29,10 +29,11 @@ type ShardSet struct {
 	maxShards    int
 	maxConns     int
 	shards       []*DB
+	mapper       *reflectx.Mapper
 }
 
 func NewShardSet(username string, password string, host string, port int, dbNamePrefix string, numShards int, maxShards int, maxConns int) *ShardSet {
-	return &ShardSet{username, password, host, port, dbNamePrefix, numShards, maxShards, maxConns, []*DB{}}
+	return &ShardSet{username, password, host, port, dbNamePrefix, numShards, maxShards, maxConns, []*DB{}, nil}
 }
 
 func (s *ShardSet) Connect() error {
@@ -42,6 +43,11 @@ func (s *ShardSet) MustConnect() {
 	if err := s.connect(true); err != nil {
 		panic(err)
 	}
+}
+func (s *ShardSet) UseJSONTags() {
+	s.mapper = reflectx.NewMapperTagFunc("json", strings.ToUpper, func(value string) string {
+		return strings.Split(value, ",")[0]
+	})
 }
 
 func (s *ShardSet) DropShards() {
@@ -143,6 +149,7 @@ func newShard(s *ShardSet, dbName string, autoIncrementOffset int) (*DB, error) 
 		return nil, err
 	}
 
+	db.Mapper = s.mapper
 	db.SetMaxOpenConns(s.maxConns)
 	// db.SetMaxIdleConns(n)
 	err = db.Ping()
