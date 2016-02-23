@@ -12,7 +12,12 @@ import (
 	"github.com/marcuswestin/go-random"
 	"github.com/marcuswestin/go-sql-shards/adapters"
 	"github.com/marcuswestin/sqlx"
+	"github.com/marcuswestin/sqlx/reflectx"
 )
+
+type DB struct {
+	*sqlx.DB
+}
 
 type ShardSet struct {
 	username     string
@@ -23,11 +28,11 @@ type ShardSet struct {
 	numShards    int
 	maxShards    int
 	maxConns     int
-	shards       []*sqlx.DB
+	shards       []*DB
 }
 
 func NewShardSet(username string, password string, host string, port int, dbNamePrefix string, numShards int, maxShards int, maxConns int) *ShardSet {
-	return &ShardSet{username, password, host, port, dbNamePrefix, numShards, maxShards, maxConns, []*sqlx.DB{}}
+	return &ShardSet{username, password, host, port, dbNamePrefix, numShards, maxShards, maxConns, []*DB{}}
 }
 
 func (s *ShardSet) Connect() error {
@@ -88,7 +93,7 @@ func (s *ShardSet) CreateUser(user string, privileges string, password string) {
 	}
 }
 
-func (s *ShardSet) Shard(id int64) *sqlx.DB {
+func (s *ShardSet) Shard(id int64) *DB {
 	if id == 0 {
 		panic("Bad shard index id 0")
 	}
@@ -96,13 +101,13 @@ func (s *ShardSet) Shard(id int64) *sqlx.DB {
 	return s.shards[shardIndex]
 }
 
-func (s *ShardSet) All() []*sqlx.DB {
-	all := make([]*sqlx.DB, len(s.shards))
+func (s *ShardSet) All() []*DB {
+	all := make([]*DB, len(s.shards))
 	copy(all, s.shards)
 	return all
 }
 
-func (s *ShardSet) RandomShard() *sqlx.DB {
+func (s *ShardSet) RandomShard() *DB {
 	return s.shards[random.Between(0, len(s.shards))]
 }
 
@@ -122,7 +127,7 @@ func (s *ShardSet) addShard(i int, selectDb bool) (err error) {
 	return
 }
 
-func newShard(s *ShardSet, dbName string, autoIncrementOffset int) (*sqlx.DB, error) {
+func newShard(s *ShardSet, dbName string, autoIncrementOffset int) (*DB, error) {
 	connVars := adapters.ConnVariables{
 		"autocommit":               "true",
 		"clientFoundRows":          "true",
@@ -144,11 +149,11 @@ func newShard(s *ShardSet, dbName string, autoIncrementOffset int) (*sqlx.DB, er
 	if err != nil {
 		return nil, errs.Wrap(err, nil)
 	}
-	return db, nil
+	return &DB{db}, nil
 }
 
 func (s *ShardSet) connect(useDb bool) (err error) {
-	s.shards = make([]*sqlx.DB, s.numShards)
+	s.shards = make([]*DB, s.numShards)
 	for i := 0; i < s.numShards; i++ {
 		err = s.addShard(i, useDb)
 		if err != nil {
