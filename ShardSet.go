@@ -137,6 +137,7 @@ func newShard(s *ShardSet, dbName string, autoIncrementOffset int) (*DB, error) 
 	connVars := adapters.ConnVariables{
 		"autocommit":               "true",
 		"clientFoundRows":          "true",
+		"parseTime":                "true",
 		"charset":                  "utf8mb4",
 		"collation":                "utf8_unicode_ci",
 		"auto_increment_increment": strconv.Itoa(s.maxShards),
